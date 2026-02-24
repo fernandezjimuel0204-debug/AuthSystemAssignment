@@ -163,7 +163,7 @@ window.showSignup = function(){
 
 // SIGN UP
 signupBtn.onclick = () => {
-    createUserWithEmailAndPassword(auth, signupEmail.value, signupPassword.value)
+    createUserWithEmailAndPassword(auth, signupFname.value, signupLname.value,signupEmail.value, signupPassword.value)
     .catch(error => alert(error.message));
 };
 
@@ -203,3 +203,4 @@ onAuthStateChanged(auth, (user) => {
 </body>
 
 </html>
+
