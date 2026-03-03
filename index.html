@@ -160,7 +160,8 @@ import {
     signOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
-    updateProfile
+    updateProfile,
+    sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -176,7 +177,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// UI Switch
+
+// 🔐 STRONG PASSWORD CHECK
+function isStrongPassword(password){
+    const strongRegex = 
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    return strongRegex.test(password);
+}
+
+
+// UI SWITCH
 window.showLogin = function(){
     signupDiv.classList.add("hidden");
     loginDiv.classList.remove("hidden");
@@ -187,9 +197,18 @@ window.showSignup = function(){
     signupDiv.classList.remove("hidden");
 }
 
+
 // SIGN UP
 signupBtn.onclick = async () => {
+
+    // STEP 1: CHECK PASSWORD STRENGTH
+    if(!isStrongPassword(signupPassword.value)){
+        alert("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+        return;
+    }
+
     try {
+
         const userCredential = await createUserWithEmailAndPassword(
             auth,
             signupEmail.value,
@@ -200,21 +219,46 @@ signupBtn.onclick = async () => {
             displayName: signupFirstName.value + " " + signupLastName.value
         });
 
-        alert("Account created successfully!");
+        // SEND EMAIL VERIFICATION
+        await sendEmailVerification(userCredential.user);
+
+        alert("Verification email sent! Please check your Gmail before logging in.");
+
+        await signOut(auth);
+
     } catch (error) {
         alert(error.message);
     }
 };
 
+
 // GOOGLE AUTH
 googleSignUp.onclick = () => signInWithPopup(auth, provider);
 googleLogin.onclick = () => signInWithPopup(auth, provider);
 
+
 // LOGIN
-loginBtn.onclick = () => {
-    signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value)
-    .catch(error => alert(error.message));
+loginBtn.onclick = async () => {
+
+    try {
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            loginEmail.value,
+            loginPassword.value
+        );
+
+        // BLOCK IF NOT VERIFIED
+        if(!userCredential.user.emailVerified){
+            alert("Please verify your email before logging in. Check your Gmail.");
+            await signOut(auth);
+            return;
+        }
+
+    } catch(error){
+        alert(error.message);
+    }
 };
+
 
 // FORGOT PASSWORD
 forgotPassword.onclick = () => {
@@ -228,8 +272,10 @@ forgotPassword.onclick = () => {
     .catch(error => alert(error.message));
 };
 
+
 // LOGOUT
 logoutBtn.onclick = () => signOut(auth);
+
 
 // AUTH STATE LISTENER
 onAuthStateChanged(auth, (user) => {
@@ -246,6 +292,7 @@ onAuthStateChanged(auth, (user) => {
         signupDiv.classList.remove("hidden");
     }
 });
+
 </script>
 
 </body>
