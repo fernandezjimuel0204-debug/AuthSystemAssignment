@@ -165,28 +165,24 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCE4WOqqapSFvoif_K7euTH7GIidzUq3Fg",
-    authDomain: "authsystemassignment.firebaseapp.com",
-    projectId: "authsystemassignment",
-    storageBucket: "authsystemassignment.firebasestorage.app",
-    messagingSenderId: "696784203952",
-    appId: "1:696784203952:web:4dc66c1ae13967cdac4b75"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-
-// 🔐 STRONG PASSWORD CHECK
 function isStrongPassword(password){
-    const strongRegex = 
+    const strongRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     return strongRegex.test(password);
 }
 
-
-// UI SWITCH
 window.showLogin = function(){
     signupDiv.classList.add("hidden");
     loginDiv.classList.remove("hidden");
@@ -197,11 +193,9 @@ window.showSignup = function(){
     signupDiv.classList.remove("hidden");
 }
 
-
 // SIGN UP
 signupBtn.onclick = async () => {
 
-    // STEP 1: CHECK PASSWORD STRENGTH
     if(!isStrongPassword(signupPassword.value)){
         alert("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
         return;
@@ -219,10 +213,12 @@ signupBtn.onclick = async () => {
             displayName: signupFirstName.value + " " + signupLastName.value
         });
 
-        // SEND EMAIL VERIFICATION
-        await sendEmailVerification(userCredential.user);
+        await sendEmailVerification(userCredential.user, {
+            url: window.location.origin,
+            handleCodeInApp: false
+        });
 
-        alert("Verification email sent! Please check your Gmail before logging in.");
+        alert("Verification email sent! Please check your Gmail.");
 
         await signOut(auth);
 
@@ -230,12 +226,6 @@ signupBtn.onclick = async () => {
         alert(error.message);
     }
 };
-
-
-// GOOGLE AUTH
-googleSignUp.onclick = () => signInWithPopup(auth, provider);
-googleLogin.onclick = () => signInWithPopup(auth, provider);
-
 
 // LOGIN
 loginBtn.onclick = async () => {
@@ -247,9 +237,10 @@ loginBtn.onclick = async () => {
             loginPassword.value
         );
 
-        // BLOCK IF NOT VERIFIED
+        await userCredential.user.reload();
+
         if(!userCredential.user.emailVerified){
-            alert("Please verify your email before logging in. Check your Gmail.");
+            alert("Please verify your email before logging in.");
             await signOut(auth);
             return;
         }
@@ -259,6 +250,9 @@ loginBtn.onclick = async () => {
     }
 };
 
+// GOOGLE AUTH
+googleSignUp.onclick = () => signInWithPopup(auth, provider);
+googleLogin.onclick = () => signInWithPopup(auth, provider);
 
 // FORGOT PASSWORD
 forgotPassword.onclick = () => {
@@ -272,12 +266,8 @@ forgotPassword.onclick = () => {
     .catch(error => alert(error.message));
 };
 
-
-// LOGOUT
 logoutBtn.onclick = () => signOut(auth);
 
-
-// AUTH STATE LISTENER
 onAuthStateChanged(auth, (user) => {
     if(user){
         signupDiv.classList.add("hidden");
@@ -292,7 +282,6 @@ onAuthStateChanged(auth, (user) => {
         signupDiv.classList.remove("hidden");
     }
 });
-
 </script>
 
 </body>
