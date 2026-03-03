@@ -33,7 +33,6 @@ h2{
     text-align:center;
     margin-bottom:25px;
     color:#ffffff;
-    font-weight:600;
 }
 
 input{
@@ -44,17 +43,25 @@ input{
     border-radius:10px;
     background:#1f1f2e;
     color:white;
-    transition:0.3s ease;
-}
-
-input::placeholder{
-    color:#aaa;
 }
 
 input:focus{
     outline:none;
     border-color:#8b5cf6;
-    box-shadow:0 0 8px rgba(139,92,246,0.6);
+}
+
+.password-wrapper{
+    position:relative;
+}
+
+.toggle-password{
+    position:absolute;
+    right:15px;
+    top:50%;
+    transform:translateY(-50%);
+    cursor:pointer;
+    font-size:13px;
+    color:#cbd5e1;
 }
 
 button{
@@ -67,48 +74,28 @@ button{
     font-weight:600;
     background: linear-gradient(90deg, #8b5cf6, #6366f1);
     color:white;
-    transition:0.3s ease;
-}
-
-button:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 20px rgba(139,92,246,0.5);
 }
 
 .google{
     background:white;
     color:#111;
-    margin-top:10px;
-}
-
-.google:hover{
-    background:#e5e5e5;
 }
 
 .link{
     text-align:center;
-    margin-top:18px;
+    margin-top:15px;
     font-size:14px;
     cursor:pointer;
     color:#cbd5e1;
 }
 
-.link:hover{
-    color:#8b5cf6;
+.hidden{
+    display:none;
 }
 
 .dashboard{
     text-align:center;
     color:white;
-}
-
-.dashboard p{
-    margin:15px 0;
-    color:#cbd5e1;
-}
-
-.hidden{
-    display:none;
 }
 </style>
 </head>
@@ -123,9 +110,13 @@ button:hover{
         <input type="text" id="signupFirstName" placeholder="First Name">
         <input type="text" id="signupLastName" placeholder="Last Name">
         <input type="email" id="signupEmail" placeholder="Email">
-        <input type="password" id="signupPassword" placeholder="Password">
+
+        <div class="password-wrapper">
+            <input type="password" id="signupPassword" placeholder="Password">
+            <span class="toggle-password" onclick="togglePassword('signupPassword')">Show</span>
+        </div>
+
         <button id="signupBtn">Sign Up</button>
-        <button class="google" id="googleSignUp">Sign Up with Google</button>
         <div class="link" onclick="showLogin()">Already have an account? Log In</div>
     </div>
 
@@ -133,10 +124,13 @@ button:hover{
     <div id="loginDiv" class="hidden">
         <h2>Login</h2>
         <input type="email" id="loginEmail" placeholder="Email">
-        <input type="password" id="loginPassword" placeholder="Password">
-        <div class="link" id="forgotPassword">Forgot Password?</div>
+
+        <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <span class="toggle-password" onclick="togglePassword('loginPassword')">Show</span>
+        </div>
+
         <button id="loginBtn">Log In</button>
-        <button class="google" id="googleLogin">Log In with Google</button>
         <div class="link" onclick="showSignup()">Don't have an account? Sign Up</div>
     </div>
 
@@ -150,39 +144,54 @@ button:hover{
 </div>
 
 <script type="module">
+
+// ✅ YOUR REAL FIREBASE CONFIG
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
 import { 
     getAuth, 
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
     signOut,
     onAuthStateChanged,
-    sendPasswordResetEmail,
     updateProfile,
     sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCE4WOqqapSFvoif_K7euTH7GIidzUq3Fg",
+  authDomain: "authsystemassignment.firebaseapp.com",
+  projectId: "authsystemassignment",
+  storageBucket: "authsystemassignment.firebasestorage.app",
+  messagingSenderId: "696784203952",
+  appId: "1:696784203952:web:4dc66c1ae13967cdac4b75"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
+// 🔐 Strong password checker
 function isStrongPassword(password){
     const strongRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     return strongRegex.test(password);
 }
 
+// SHOW/HIDE PASSWORD
+window.togglePassword = function(id){
+    const input = document.getElementById(id);
+    const toggle = input.nextElementSibling;
+
+    if(input.type === "password"){
+        input.type = "text";
+        toggle.innerText = "Hide";
+    } else {
+        input.type = "password";
+        toggle.innerText = "Show";
+    }
+}
+
+// UI SWITCH
 window.showLogin = function(){
     signupDiv.classList.add("hidden");
     loginDiv.classList.remove("hidden");
@@ -197,7 +206,7 @@ window.showSignup = function(){
 signupBtn.onclick = async () => {
 
     if(!isStrongPassword(signupPassword.value)){
-        alert("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+        alert("Password must contain 8+ chars, uppercase, lowercase, number & special character.");
         return;
     }
 
@@ -213,10 +222,7 @@ signupBtn.onclick = async () => {
             displayName: signupFirstName.value + " " + signupLastName.value
         });
 
-        await sendEmailVerification(userCredential.user, {
-            url: window.location.origin,
-            handleCodeInApp: false
-        });
+        await sendEmailVerification(userCredential.user);
 
         alert("Verification email sent! Please check your Gmail.");
 
@@ -250,22 +256,6 @@ loginBtn.onclick = async () => {
     }
 };
 
-// GOOGLE AUTH
-googleSignUp.onclick = () => signInWithPopup(auth, provider);
-googleLogin.onclick = () => signInWithPopup(auth, provider);
-
-// FORGOT PASSWORD
-forgotPassword.onclick = () => {
-    if(loginEmail.value === ""){
-        alert("Enter your email first.");
-        return;
-    }
-
-    sendPasswordResetEmail(auth, loginEmail.value)
-    .then(() => alert("Password reset email sent!"))
-    .catch(error => alert(error.message));
-};
-
 logoutBtn.onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, (user) => {
@@ -274,7 +264,7 @@ onAuthStateChanged(auth, (user) => {
         loginDiv.classList.add("hidden");
         dashboard.classList.remove("hidden");
 
-        userEmail.innerText = user.displayName
+        userEmail.innerText = user.displayName 
             ? user.displayName + " (" + user.email + ")"
             : user.email;
     } else {
@@ -282,6 +272,7 @@ onAuthStateChanged(auth, (user) => {
         signupDiv.classList.remove("hidden");
     }
 });
+
 </script>
 
 </body>
